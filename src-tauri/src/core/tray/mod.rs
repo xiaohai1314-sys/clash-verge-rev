@@ -688,15 +688,8 @@ fn build_tray_menu(
         hotkeys.get("clash_mode_global").copied(),
     )?;
 
-    let direct_mode = &CheckMenuItem::with_id(
-        app_handle,
-        MenuIds::DIRECT_MODE,
-        &texts.direct_mode,
-        true,
-        current_proxy_mode == "direct",
-        hotkeys.get("clash_mode_direct").copied(),
-    )?;
-
+    // Direct mode has no tray item; it is reachable only via the master
+    // switch on the home page.
     let outbound_modes = if show_outbound_modes_inline {
         None
     } else {
@@ -714,7 +707,6 @@ fn build_tray_menu(
             &[
                 rule_mode as &dyn IsMenuItem<Wry>,
                 global_mode as &dyn IsMenuItem<Wry>,
-                direct_mode as &dyn IsMenuItem<Wry>,
             ],
         )?)
     };
@@ -842,7 +834,6 @@ fn build_tray_menu(
         menu_items.extend_from_slice(&[
             rule_mode as &dyn IsMenuItem<Wry>,
             global_mode as &dyn IsMenuItem<Wry>,
-            direct_mode as &dyn IsMenuItem<Wry>,
         ]);
     } else if let Some(ref outbound_modes) = outbound_modes {
         menu_items.push(outbound_modes);

@@ -1,63 +1,97 @@
 import { PowerSettingsNewRounded } from '@mui/icons-material'
 import { Typography } from '@mui/material'
 import { useLockFn } from 'ahooks'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { BaseConfig } from 'tauri-plugin-mihomo-api'
 
 import { Switch } from '@/components/base'
 import { EnhancedCard } from '@/components/home/enhanced-card'
-import { useSystemProxyState } from '@/hooks/use-system-proxy-state'
-import { useSystemState } from '@/hooks/use-system-state'
-import { useVerge } from '@/hooks/use-verge'
+import { useClashMode, useRuntimeConfig } from '@/hooks/use-clash'
+import {
+  useAppRefreshers,
+  useClashConfigData,
+} from '@/providers/app-data-context'
+import { patchClashMode } from '@/services/cmds'
+import { mutate } from '@/services/mutate'
 import { showNotice } from '@/services/notice-service'
-import { requestService } from '@/services/service-request'
+import { setCacheData } from '@/services/query-client'
 
-const LOCAL_STORAGE_TUN_KEY = 'clash-verge-master-switch-tun'
+const CLASH_MODES = ['rule', 'global', 'direct'] as const
+type ClashMode = (typeof CLASH_MODES)[number]
+
+const isClashMode = (mode: string): mode is ClashMode =>
+  (CLASH_MODES as readonly string[]).includes(mode)
+
+const toClashMode = (mode?: string | null) => {
+  const normalized = mode?.toLowerCase()
+  return normalized && isClashMode(normalized) ? normalized : undefined
+}
+
+const LOCAL_STORAGE_MODE_KEY = 'clash-verge-master-switch-mode'
 
 export const MasterProxySwitch = () => {
   const { t } = useTranslation()
-  const { verge, mutateVerge, patchVerge } = useVerge()
-  const { toggleSystemProxy } = useSystemProxyState()
-  const { runState, isTunModeAvailable, isLoading } = useSystemState()
+  const { clashConfig } = useClashConfigData()
+  const { refreshClashConfig } = useAppRefreshers()
 
-  const { enable_system_proxy, enable_tun_mode } = verge ?? {}
-  const active = Boolean(enable_system_proxy || enable_tun_mode)
+  const [optimisticMode, setOptimisticMode] = useState<ClashMode | null>(null)
 
-  const setTunMode = async (value: boolean) => {
-    mutateVerge((prev) => ({ ...prev, enable_tun_mode: value }))
-    await patchVerge({ enable_tun_mode: value })
+  const controllerMode = toClashMode(clashConfig?.mode)
+  const needFallback = !controllerMode
+  const { data: runtimeConfig } = useRuntimeConfig(needFallback)
+  const runtimeMode = toClashMode(runtimeConfig?.mode)
+  const {
+    data: backendMode,
+    refetch: refetchBackendMode,
+  } = useClashMode(needFallback)
+  // Saved config is refreshed on mode changes; runtime config may be stale.
+  const fallbackMode = toClashMode(backendMode) ?? runtimeMode
+
+  const resolvedMode = controllerMode ?? fallbackMode
+  const currentMode = optimisticMode ?? resolvedMode
+
+  const active = currentMode != null && currentMode !== 'direct'
+
+  const applyMode = async (mode: ClashMode): Promise<boolean> => {
+    if (mode === currentMode) return true
+
+    setOptimisticMode(mode)
+    try {
+      await mutate(() => patchClashMode(mode), {
+        id: 'patch-clash-mode',
+        errorNotice: false,
+      })
+    } catch (error) {
+      setOptimisticMode(null)
+      showNotice.error(error)
+      return false
+    }
+
+    // Write through the live cache to avoid flashing the old mode during refetch.
+    setCacheData<BaseConfig>(['getClashConfig'], (old) =>
+      old ? { ...old, mode } : old,
+    )
+    await Promise.allSettled([refreshClashConfig(), refetchBackendMode()])
+    setOptimisticMode(null)
+    return true
   }
 
   const handleToggle = useLockFn(async (value: boolean) => {
-    try {
-      if (!value) {
-        // No combined setting exists, so the TUN state to restore on the
-        // next master-on is kept locally.
-        localStorage.setItem(
-          LOCAL_STORAGE_TUN_KEY,
-          enable_tun_mode ? '1' : '0',
-        )
-        if (enable_tun_mode) await setTunMode(false)
-        if (enable_system_proxy) await toggleSystemProxy(false)
-        return
+    if (!value) {
+      if (currentMode === 'rule' || currentMode === 'global') {
+        // No backend field stores the pre-direct mode, so it is kept
+        // locally like the chain-mode state on the proxies page.
+        localStorage.setItem(LOCAL_STORAGE_MODE_KEY, currentMode)
       }
-      // Enabling needs a running core; disabling only writes OS state and must stay available.
-      if (!isLoading && runState.mode === 'NotRunning') {
-        showNotice.error('settings.feedback.errors.sysproxy.coreNotReady')
-        return
-      }
-      await toggleSystemProxy(true)
-      if (localStorage.getItem(LOCAL_STORAGE_TUN_KEY) === '1') {
-        if (!isTunModeAvailable) {
-          requestService({
-            reason: 'tunNeedsService',
-            restore: { enable_tun_mode: true },
-          })
-        } else {
-          await setTunMode(true)
-        }
-      }
-    } catch (err) {
-      showNotice.error(err)
+      await applyMode('direct')
+      return
+    }
+
+    const remembered = localStorage.getItem(LOCAL_STORAGE_MODE_KEY)
+    const target: ClashMode = remembered === 'global' ? 'global' : 'rule'
+    if (await applyMode(target)) {
+      localStorage.removeItem(LOCAL_STORAGE_MODE_KEY)
     }
   })
 

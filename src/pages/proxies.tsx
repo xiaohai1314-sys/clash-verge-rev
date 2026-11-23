@@ -27,6 +27,9 @@ import { debugLog } from '@/utils/debug'
 const MODES = ['rule', 'global', 'direct'] as const
 type Mode = (typeof MODES)[number]
 const MODE_SET = new Set<string>(MODES)
+// Direct mode is not offered here; it is reachable only via the master
+// switch on the home page.
+const SELECTABLE_MODES: readonly Mode[] = ['rule', 'global']
 const isMode = (value: unknown): value is Mode =>
   typeof value === 'string' && MODE_SET.has(value)
 
@@ -170,7 +173,7 @@ const ProxyPage = () => {
           <ProviderButton />
 
           <ButtonGroup size="small">
-            {MODES.map((mode) => (
+            {SELECTABLE_MODES.map((mode) => (
               <Button
                 key={mode}
                 variant={mode === curMode ? 'contained' : 'outlined'}

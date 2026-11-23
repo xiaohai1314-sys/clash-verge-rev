@@ -27,6 +27,13 @@
     "title": "Home"
   },
   "components": {
+    "masterSwitch": {
+      "title": "Proxy Master Switch",
+      "status": {
+        "enabled": "Proxy is on — the system proxy or TUN mode is active",
+        "disabled": "Proxy is off — turn on to enable the system proxy and restore the previous TUN mode state"
+      }
+    },
     "proxyTun": {
       "status": {
         "systemProxyEnabled": "System Proxy Enabled",

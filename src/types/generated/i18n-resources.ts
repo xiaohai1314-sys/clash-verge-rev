@@ -146,6 +146,13 @@ export interface TranslationResources {
           }
           title: string
         }
+        masterSwitch: {
+          status: {
+            disabled: string
+            enabled: string
+          }
+          title: string
+        }
         proxyTun: {
           status: {
             systemProxyDisabled: string

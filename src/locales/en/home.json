@@ -30,8 +30,8 @@
     "masterSwitch": {
       "title": "Proxy Master Switch",
       "status": {
-        "enabled": "Proxy is on — the system proxy or TUN mode is active",
-        "disabled": "Proxy is off — turn on to enable the system proxy and restore the previous TUN mode state"
+        "enabled": "Proxy is on — traffic is routed by the current mode (rule or global)",
+        "disabled": "Proxy is off — mode is set to direct, so all traffic uses your local network"
       }
     },
     "proxyTun": {

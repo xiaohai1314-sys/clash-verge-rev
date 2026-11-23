@@ -27,6 +27,13 @@
     "title": "首页"
   },
   "components": {
+    "masterSwitch": {
+      "title": "代理总开关",
+      "status": {
+        "enabled": "代理已开启 — 系统代理或 TUN 模式正在生效",
+        "disabled": "代理已关闭 — 打开后将启用系统代理，并恢复关闭前的 TUN 模式状态"
+      }
+    },
     "proxyTun": {
       "status": {
         "systemProxyEnabled": "系统代理已启用，您的应用将通过代理访问网络",

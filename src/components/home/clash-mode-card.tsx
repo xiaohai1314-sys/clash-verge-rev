@@ -24,6 +24,10 @@ import type { TranslationKey } from '@/types/generated/i18n-keys'
 const CLASH_MODES = ['rule', 'global', 'direct'] as const
 type ClashMode = (typeof CLASH_MODES)[number]
 
+// Direct mode is not offered here; it is reachable only via the master
+// switch on the home page.
+const SELECTABLE_MODES: readonly ClashMode[] = ['rule', 'global']
+
 const isClashMode = (mode: string): mode is ClashMode =>
   (CLASH_MODES as readonly string[]).includes(mode)
 
@@ -172,7 +176,7 @@ export const ClashModeCard = () => {
           zIndex: 2,
         }}
       >
-        {CLASH_MODES.map((mode) => (
+        {SELECTABLE_MODES.map((mode) => (
           <Paper
             key={mode}
             elevation={mode === currentMode ? 2 : 0}

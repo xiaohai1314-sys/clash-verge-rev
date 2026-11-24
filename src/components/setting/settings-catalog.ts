@@ -503,7 +503,6 @@ const settingsCatalog: readonly SettingEntry[] = [
     'settings.modals.hotkey.functions.openOrCloseDashboard': 'hotkey viewer',
     'settings.modals.hotkey.functions.rule': 'hotkey viewer',
     'settings.modals.hotkey.functions.global': 'hotkey viewer',
-    'settings.modals.hotkey.functions.direct': 'hotkey viewer',
     'settings.modals.hotkey.functions.toggleSystemProxy': 'hotkey viewer',
     'settings.modals.hotkey.functions.toggleTunMode': 'hotkey viewer',
     'settings.modals.hotkey.functions.entryLightweightMode': 'hotkey viewer',

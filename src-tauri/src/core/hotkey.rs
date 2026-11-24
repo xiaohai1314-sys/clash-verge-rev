@@ -25,7 +25,6 @@ pub enum HotkeyFunction {
     OpenOrCloseDashboard,
     ClashModeRule,
     ClashModeGlobal,
-    ClashModeDirect,
     ToggleSystemProxy,
     ToggleTunMode,
     EntryLightweightMode,
@@ -41,7 +40,6 @@ impl fmt::Display for HotkeyFunction {
             Self::OpenOrCloseDashboard => "open_or_close_dashboard",
             Self::ClashModeRule => "clash_mode_rule",
             Self::ClashModeGlobal => "clash_mode_global",
-            Self::ClashModeDirect => "clash_mode_direct",
             Self::ToggleSystemProxy => "toggle_system_proxy",
             Self::ToggleTunMode => "toggle_tun_mode",
             Self::EntryLightweightMode => "entry_lightweight_mode",
@@ -62,7 +60,6 @@ impl FromStr for HotkeyFunction {
             "open_or_close_dashboard" => Ok(Self::OpenOrCloseDashboard),
             "clash_mode_rule" => Ok(Self::ClashModeRule),
             "clash_mode_global" => Ok(Self::ClashModeGlobal),
-            "clash_mode_direct" => Ok(Self::ClashModeDirect),
             "toggle_system_proxy" => Ok(Self::ToggleSystemProxy),
             "toggle_tun_mode" => Ok(Self::ToggleTunMode),
             "entry_lightweight_mode" => Ok(Self::EntryLightweightMode),
@@ -136,13 +133,6 @@ impl Hotkey {
                     // 错误已在 change_clash_mode 内部记录，此处显式忽略返回值
                     let _ = feat::change_clash_mode("global".into()).await;
                     notify_event(NotificationEvent::ClashModeChanged { mode: "Global" }).await;
-                });
-            }
-            HotkeyFunction::ClashModeDirect => {
-                AsyncHandler::spawn(async move || {
-                    // 错误已在 change_clash_mode 内部记录，此处显式忽略返回值
-                    let _ = feat::change_clash_mode("direct".into()).await;
-                    notify_event(NotificationEvent::ClashModeChanged { mode: "Direct" }).await;
                 });
             }
             HotkeyFunction::ToggleSystemProxy => {
